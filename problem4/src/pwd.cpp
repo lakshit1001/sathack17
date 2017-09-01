@@ -9,6 +9,6 @@ int main(int argc, char const *argv[])
 {
 	char cwd[1024];
 	cwd=find_path();
-	cout<<cwd
+	fprintf(stdout,cwd);
 	return 0;
 }
