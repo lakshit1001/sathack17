@@ -18,15 +18,17 @@ enum opCode{
 	END = 14,
 	DUP = 15, //d
 	FLIP = 16, //d
-	NOP = 17, //no idea what this is.
+	NOP = 17, //no op.blank.does nothing.
 	PUSH = 18, //d
 	GON = 19, //jump if negative flag is set
 	GOP = 20, //jump if parity set
-	GOC = 21 //jum if carry set
+	GOC = 21,//jum if carry set
+	GONC = 22,
+	GONP = 23
 };
-
+//add return
 struct instruction {  //encapsulates opcode +plus arg, every arg is 16 bit long
-	int16_t code;
+	uint16_t code;
 
 };
 

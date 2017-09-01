@@ -13,23 +13,23 @@ void jump(struct vMachine* vm){
 	//POP NEW PC.
 	uint16_t newPc = VPOP(vm);
 	//PUSH CURRENT PC ONTO STACK.
-	VPUSH(vm,vm->registers.pc);
+	//VPUSH(vm,vm->registers.pc);//currently removed. cant return,
 	//set PC AS NEWPC
+	printf("\njumping to  : %u",newPc);
 	vm->registers.pc = newPc;
 }
 
 //TODO Checks for memory and stack size during calculation
 //create a new vm
 struct vMachine* newVM() {
-
 	struct vMachine* vm = (struct vMachine*)(malloc(sizeof(struct vMachine)));
 	vm->registers.pc = 0; //initialize program counter to first instruction
 	vm->registers.sp = -1;
 	vm->registers.ir.code = 0; //0 does not correspond to any instruction
 	clearFlag(&vm->registers.flag);
 	//allocate stack and code memory
-	vm->stack = (int16_t*)(malloc(STACK_SIZE*sizeof(int16_t)));
-	vm->code = (int16_t*)(malloc(CODE_MEMORY_SIZE*sizeof(int16_t)));
+	vm->stack = (uint16_t*)(malloc(STACK_SIZE*sizeof(uint16_t)));
+	vm->code = (uint16_t*)(malloc(CODE_MEMORY_SIZE*sizeof(uint16_t)));
 	return vm;
 }
 
@@ -44,7 +44,8 @@ void delVM(struct vMachine* vm) {
 //fetches the next instruction and sets code part of instruction register
 void fetch(struct vMachine* vm) {
 
-	int16_t code = vm->code[vm->registers.pc];
+	uint16_t code = vm->code[vm->registers.pc];
+	printf("\non location : %u",vm->registers.pc);
 	vm->registers.pc++; //increment pc
 	vm->registers.ir.code = code;
 }
@@ -52,57 +53,60 @@ void fetch(struct vMachine* vm) {
 
 //Take the instruction 
 
-void execute(struct vMachine *vm) {
+bool execute(struct vMachine *vm) {
 
 	uint16_t code = vm->registers.ir.code;
 	switch(code){
 
 		case POP: {
+				printf("\nPopped : %u",vm->stack[vm->registers.sp]);
 				vm->registers.sp--;
 				break;
 			}
 		case PUSH: {
 				//GET 16 BIT DATA VALUE FROM NEXT POSITION AND INC. PC
-				int16_t data = vm->code[vm->registers.pc++];
+				uint16_t data = vm->code[vm->registers.pc++];
+				printf("\nPushed : %u",data);
 				VPUSH(vm,data);
 				break;
 			}
 		case EQU: ;{  //Semicolon inserted because c grammer does not allow decalaration after a label
-				int16_t a = VPOP(vm);  // See http://stackoverflow.com/questions/18496282/why-do-i-get-a-label-can-only-be-part-of-a-statement-and-a-declaration-is-not-a
-				int16_t b = VPOP(vm);
+				uint16_t a = VPOP(vm);  // See http://stackoverflow.com/questions/18496282/why-do-i-get-a-label-can-only-be-part-of-a-statement-and-a-declaration-is-not-a
+				uint16_t b = VPOP(vm);
 				a == b ? setZero(&vm->registers.flag) : clearFlag(&vm->registers.flag);
+				printf("Zero Flag : %u",isSet(&vm->registers.flag,7));
 				VPUSH(vm, b);
 				VPUSH(vm, a);
 				break;
 			} // scope of variables is entire switch block; Hence,the braces.
 		case DUP: ; {
-				int16_t a = VPOP(vm);
+				uint16_t a = VPOP(vm);
 				VPUSH(vm, a);
 				VPUSH(vm, a);
 				break;
 			}
 		case FLIP: ;{
-				int16_t a = VPOP(vm);
-				int16_t b = VPOP(vm);
+				uint16_t a = VPOP(vm);
+				uint16_t b = VPOP(vm);
 				VPUSH(vm, a);
 				VPUSH(vm, b);
 				break;
 			}
 		case LST: ;{
-				int16_t a = VPOP(vm);
-				int16_t b = VPOP(vm);
-				a < b ? setZero(&vm->registers.flag) : clearFlag(&vm->registers.flag);
+				uint16_t a = VPOP(vm);
+				uint16_t b = VPOP(vm);
+				a < b ? setNegative(&vm->registers.flag) : clearFlag(&vm->registers.flag);
 				break;
 			}
-		case GRT: ;{
-				int16_t a = VPOP(vm);
-				int16_t b = VPOP(vm);
+		/*case GRT: ;{ //just use lst.
+				uint16_t a = VPOP(vm);
+				uint16_t b = VPOP(vm);
 				a > b ? setZero(&vm->registers.flag) : clearFlag(&vm->registers.flag);
 				break;
-			}
+			}*/
 		case ADD: ;{
-				int16_t a = VPOP(vm);
-				int16_t b = VPOP(vm);
+				uint16_t a = VPOP(vm);
+				uint16_t b = VPOP(vm);
 
 				if(isAddSafe(a,b)){
 					clearFlag(&vm->registers.flag);
@@ -114,9 +118,9 @@ void execute(struct vMachine *vm) {
 				break;
 			}
 		case SUB: ;{
-				int16_t a = VPOP(vm);
-				int16_t b = VPOP(vm);
-				int16_t c = a-b;
+				uint16_t a = VPOP(vm);
+				uint16_t b = VPOP(vm);
+				uint16_t c = a-b;
 
 				if(!c){
 					setZero(&vm->registers.flag);
@@ -124,13 +128,13 @@ void execute(struct vMachine *vm) {
 					setNegative(&vm->registers.flag);
 				}
 
-				VPUSH(vm,c);
+				VPUSH(vm,c);				
 				break;
 			}
 		case MUL: ;{
-				int16_t a = VPOP(vm);
-				int16_t b = VPOP(vm);
-				int16_t c = a*b;
+				uint16_t a = VPOP(vm);
+				uint16_t b = VPOP(vm);
+				uint16_t c = a*b;
 
 				if(a == 0 || b == 0){ // set zero flag if either 0
 					setZero(&vm->registers.flag);
@@ -147,6 +151,7 @@ void execute(struct vMachine *vm) {
 				break;
 			}
 		case GOTO: ;{
+				
 				jump(vm);
 				break;
 			}
@@ -157,7 +162,15 @@ void execute(struct vMachine *vm) {
 				}
 				break;
 			}
-			case GOP: ;{
+		case GOC: ;{
+
+				if(isSet(&vm->registers.flag,1)){
+					jump(vm);
+				}
+
+				break;
+			}
+		case GOP: ;{
 
 				if(isSet(&vm->registers.flag,2)){
 					jump(vm);
@@ -165,9 +178,9 @@ void execute(struct vMachine *vm) {
 
 				break;
 			}
-		case GOC: ;{
+		case GONC: ;{
 
-				if(isSet(&vm->registers.flag,8)){
+				if(!isSet(&vm->registers.flag,1)){
 					jump(vm);
 				}
 
@@ -180,47 +193,63 @@ void execute(struct vMachine *vm) {
 				}
 				break;
 			}
+		case GONP: ;{
+
+				if(!isSet(&vm->registers.flag,2)){
+					jump(vm);
+				}
+				break;
+			}
 		case READ: ;{
 				//get memory address.
-				int16_t memLoc = VPOP(vm);
-				int16_t data = vm->code[memLoc];
+				uint16_t memLoc = VPOP(vm);
+				uint16_t data = vm->code[memLoc];
 				VPUSH(vm, data);
 				break;
 			}
 		case WRTD: ;{
 				//POP mem address and data.
-				int16_t data = VPOP(vm);
-				int16_t memLoc = VPOP(vm);
+				uint16_t data = VPOP(vm);
+				uint16_t memLoc = VPOP(vm);
 				vm->code[memLoc] = data;
 				break;
 			}
+		case END: ;{
+
+				return true;
+		}
 		default:
 				printf("This op is not supported.");
 				break;
-
-
 	}
+	//CONTINUE EXECUTING
+	return false;
 }
 
 void run(struct vMachine *vm) {
+	bool halt = false;
 
 	do{
 		fetch(vm);
-		
-		execute(vm);
+		halt = execute(vm);
 
-	}while(1);
+	}while(!halt);
 }
 
 int main() {
 
 	struct vMachine* vm = newVM();
-	vm->code[0] = 1;
-	vm->code[1] = 3;
-	vm->code[2] = 4;
-	vm->code[3] = 20;
-	vm->code[4] = 10;
+	vm->code[0] = 18; 
+	vm->code[1] = 3; // push 3 onto stack.
+	//now push location to which to jump to
+	vm->code[2] = 18; 
+	vm->code[3] = 3;//push address 10
+	vm->code[4] = 8; //check for equailty
+	vm->code[5] = 
+	vm->code[6] = 14; //halt
+	run(vm);
 	delVM(vm);
+	
 
 	return 0;
 }
