@@ -5,10 +5,13 @@
 #include <vector>
 #include <sstream>
 #include <sys/wait.h>
-
+#include <queue>
 #include "include/inbuilds.h"
+#include <queue>         
+#include <stdio.h>
 
 
+std::queue<char**> myqueue;
 
 void loop();
 int k_execute(char **cmd);
@@ -59,11 +62,19 @@ void loop(){
 			C[i]=toCstr(inp[i]);
 		}
 		C[inp.size()]=NULL;
+		myqueue.push (C);
 
 		//if the command is shell build in, dont fork
 		if(kash::isShellBuildIn(inp[0])){
 			if(inp[0]=="cd")
 				kash::cd(C);
+			else if(inp[0]=="all_cmds")
+				while (myqueue.size()>1)
+				{
+					fprintf(stdout,*(myqueue.front()));
+					fprintf(stdout,"\n");
+	  				myqueue.pop();
+				}
 			continue;
 		}
 

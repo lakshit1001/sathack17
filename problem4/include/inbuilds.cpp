@@ -11,6 +11,7 @@ int kash::cd(char **cmd){
 }	
 
 bool kash::isShellBuildIn(std::string cmd){
-	if(cmd=="cd")
+	if(cmd=="cd" or cmd=="all_cmds")
 		return true;
 }
+
