@@ -1,9 +1,11 @@
 #include <iostream>
 #include <string>
 #include <unistd.h>
+#include <stdio.h>
 #include <cstdlib>
 #include <vector>
 #include <sstream>
+#include <fcntl.h>
 #include <sys/wait.h>
 
 #include "include/inbuilds.h"
@@ -19,6 +21,7 @@ int min(int a, int b);
 int main(int argc, char const *argv[])
 {
 	char **c;
+	// putenv("PATH=$PATH:~/bin");
 	std::cout<<"Welcome to kash\n";
 	loop();
 	return 0;
@@ -71,7 +74,18 @@ void loop(){
 		pid_t pid = fork();
 		if(pid==0){
 			//clear
+			int old_out = dup(1);
+			int i=0;
+			while(C[i]!=NULL){
+				if(C[i][0]=='>'){
+					C[i]=NULL;
+					close(1);
+					open(C[i+1], O_CREAT | O_RDWR , S_IRUSR | S_IWUSR);
+				}
+				i++;
+			}
 			k_execute(C);
+			dup2(old_out,1);
 			exit(EXIT_SUCCESS);
 		}else if(pid>0){
 			//parent
@@ -89,6 +103,8 @@ void loop(){
 
 int k_execute(char **cmd){	
 	int i = execvp(cmd[0],cmd);
+	if(i==-1)
+		fprintf(stderr,"kash Error: Couldn't find command %s\n",cmd[0]);
 	return i;
 }
 

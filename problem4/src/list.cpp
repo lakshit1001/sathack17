@@ -19,7 +19,7 @@ int k_execute(int argc,char **cmd){
   //char *args[2]={cmd,NULL};
   //if(cmd==NULL)
   char *cwd;
-  std::cout<<cmd[0];
+  // std::cout<<cmd[0];
     if (argc>1){
       cwd=cmd[1];
     }else{    
@@ -41,15 +41,18 @@ void printdir (char *dir) {
     }
 
     chdir (dir);
-    while ((entry = readdir(dp)) != NULL)
-        printf ("%s\n",entry -> d_name);
+    while ((entry = readdir(dp)) != NULL){
+      write(1,entry -> d_name, strlen(entry -> d_name));
+      write(1,"\n",1);
+        // printf ("%s\n",entry -> d_name);
+    }
     closedir (dp);
 }
 
 int main(int argc, char *argv[])
 {
   /* code */
-  std::cout<<argc<<std::endl;
+  // std::cout<<argc<<std::endl;
   k_execute(argc,argv);
   return 0;
 }
