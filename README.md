@@ -8,14 +8,21 @@
 
 Link to exercise 4 - https://github.com/hkhatri241/vm
 
-##Different commands 
+## Different commands 
 kcat
+
 Kstat
+
 kls
+
 kmv path1 path2
+
 krm file_name
+
 ktime
+
 kcat
+
 Kmkdir
 
 io redirection example:
