@@ -11,7 +11,7 @@ struct stat st;
 
 void remove_file(char **argv)
 {
-	if (stat(argv[1], &st) == 0 && S_ISREG(st.st_mode))
+	if (stat(argv[1], &st) == 0 && S_ISREG(st.st_mode) || S_ISDIR(st.st_mode))
 	{
     	if (asprintf(&p, "%s", argv[1]) != -1)
     	{
