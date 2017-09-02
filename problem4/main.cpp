@@ -86,9 +86,18 @@ void loop(){
 		if(pid==0){
 			//clear
 			int old_out = dup(1);
+			int old_in = dup(0);
 			int i=0;
+
+
 			while(C[i]!=NULL){
-				if(C[i][0]=='>'){
+
+				if(C[i][0]=='<'){
+					C[i]=NULL;
+					close(0);
+					open(C[i+1],O_RDWR, S_IRUSR | S_IWUSR);
+				}
+				else if(C[i][0]=='>'){
 					C[i]=NULL;
 					close(1);
 					open(C[i+1], O_CREAT | O_RDWR , S_IRUSR | S_IWUSR);
@@ -97,6 +106,7 @@ void loop(){
 			}
 			k_execute(C);
 			dup2(old_out,1);
+			dup2(old_in,0);
 			exit(EXIT_SUCCESS);
 		}else if(pid>0){
 			//parent
