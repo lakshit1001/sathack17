@@ -1,0 +1,14 @@
+input
+.
+a.out
+test.txt
+Makefile
+src
+include
+..
+main.cpp
+sum.cpp
+new.txt
+kash
+test.cpp
+new
