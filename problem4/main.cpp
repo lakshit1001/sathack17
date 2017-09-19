@@ -1,29 +1,37 @@
 #include <iostream>
 #include <string>
 #include <unistd.h>
+#include <stdio.h>
 #include <cstdlib>
 #include <vector>
 #include <sstream>
+#include <fcntl.h>
 #include <sys/wait.h>
+#include <queue>
+#include "include/inbuilds.h"
+#include <queue>         
+#include <stdio.h>
 
-#define LSH_TOK_BUFSIZE 64
-#define LSH_TOK_DELIM " \t\r\n\a"
 
-using namespace std;
+std::queue<char**> myqueue;
 
 void loop();
 int k_execute(char **cmd);
+char *toCstr(std::string str);
+
 int min(int a, int b);
 
 int main(int argc, char const *argv[])
 {
-	cout<<"Welcome to kash\n";
+	char **c;
+	// putenv("PATH=$PATH:~/bin");
+	std::cout<<"Welcome to kash\n";
 	loop();
 	return 0;
 }
 
 
-char *toCstr(string str){
+char *toCstr(std::string str){
 	char *c = new char[str.size()+1];
 	for(int i=0;i<str.size();i++){
 		c[i]=str[i];
@@ -34,15 +42,22 @@ char *toCstr(string str){
 
 void loop(){
 	while(1){
-		string cmd;
-		vector<string> inp;
-		cout<<"$$ ";
-		getline(cin,cmd);
-		istringstream iss(cmd);
-		string word;
+		std::string cmd;
+		std::vector<std::string> inp;
+		std::cout<<"$$ ";
+		getline(std::cin,cmd);
+
+		//if empty string, continue;
+		if(cmd==""){
+			continue;
+		}
+
+		std::istringstream iss(cmd);
+		std::string word;
 		while(iss >> word) {
 		    inp.push_back(word);
 		}
+
 
 		char **C = new char*[inp.size()+1];
 		for(int i=0;i<inp.size();i++){
@@ -50,12 +65,48 @@ void loop(){
 			C[i]=toCstr(inp[i]);
 		}
 		C[inp.size()]=NULL;
+		myqueue.push (C);
+
+		//if the command is shell build in, dont fork
+		if(kash::isShellBuildIn(inp[0])){
+			if(inp[0]=="cd")
+				kash::cd(C);
+			else if(inp[0]=="all_cmds")
+				while (myqueue.size()>1)
+				{
+					fprintf(stdout,*(myqueue.front()));
+					fprintf(stdout,"\n");
+	  				myqueue.pop();
+				}
+			continue;
+		}
 
 		pid_t wpid;
 		pid_t pid = fork();
 		if(pid==0){
 			//clear
+			int old_out = dup(1);
+			int old_in = dup(0);
+			int i=0;
+
+
+			while(C[i]!=NULL){
+
+				if(C[i][0]=='<'){
+					C[i]=NULL;
+					close(0);
+					open(C[i+1],O_RDWR, S_IRUSR | S_IWUSR);
+				}
+				else if(C[i][0]=='>'){
+					C[i]=NULL;
+					close(1);
+					open(C[i+1], O_CREAT | O_RDWR , S_IRUSR | S_IWUSR);
+				}
+				i++;
+			}
 			k_execute(C);
+			dup2(old_out,1);
+			dup2(old_in,0);
 			exit(EXIT_SUCCESS);
 		}else if(pid>0){
 			//parent
@@ -63,18 +114,18 @@ void loop(){
 			do {
 			  wpid = waitpid(pid, &status, WUNTRACED);
 			} while (!WIFEXITED(status) && !WIFSIGNALED(status));
-			cout<<"Command done"<<endl;
+			// std::cout<<"Command done"<<std::endl;
 		}else{
-			cout<<"Oops something\n";
+			std::cout<<"Oops something\n";
 		}	
 	}
 }
 
 
-int k_execute(char **cmd){
-    // char *args[2]={cmd,NULL};	
+int k_execute(char **cmd){	
 	int i = execvp(cmd[0],cmd);
-	// cout<<cmd<<"Hello"<<i;
+	if(i==-1)
+		fprintf(stderr,"kash Error: Couldn't find command %s\n",cmd[0]);
 	return i;
 }
 
